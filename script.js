@@ -9,6 +9,21 @@ let height;
 
 updateViewportSize();
 
+class Rect {
+  constructor(x, y, width, height) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+  }
+
+  contains(x, y) {
+    //console.log(x, y);
+    return x >= this.x && x <= this.x + this.width &&
+           y >= this.y && y <= this.y + this.height;
+  }
+}
+
 class Screen {
   constructor(canvas) {
     this._canvas = canvas;
@@ -38,14 +53,39 @@ class MenuScreen extends Screen {
     this._music = document.createElement('audio');
     this._music.src = 'menu.mp3';
 
+    this.mode1Flag = false;
+    this.mode2Flag = false;
+    this.inputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.555555,
+                              this._canvas.width / 2, this._canvas.height / 28);
+    this.lowerInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.4,
+                              this._canvas.width / 2, this._canvas.height / 28);
     this._music.play();
   }
   update() {
-
+    if(this.inputRect.contains(game.playerPos.x, game.playerPos.y)){
+      this.mode1Flag = true;
+      this.mode2Flag = false;
+    }
+    else if(this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
+      this.mode1Flag = false;
+      this.mode2Flag = true;
+    }
+    else {
+      this.mode1Flag = false;
+      this.mode2Flag = false;
+    }
   }
 
   draw() {
     this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
+    if(this.mode1Flag) {
+        this._context.drawImage(this._cursor, this.inputRect.x - this.inputRect.height * 2, this.inputRect.y,
+                                this.inputRect.height, this.inputRect.height);
+    }
+    else if (this.mode2Flag) {
+      this._context.drawImage(this._cursor, this.lowerInputRect.x - this.lowerInputRect.height * 2, this.lowerInputRect.y,
+                              this.lowerInputRect.height, this.lowerInputRect.height);
+    }
   }
 
   resize() {
@@ -64,13 +104,24 @@ class Game {
     this.maxFps = 60;
     this.timestep = 1000 / 60;
 
+    this.playerPos = {
+      x: 0,
+      y: 0
+    };
+
     this.gameLoop = this.gameLoop.bind(this);
+
+
+    $(this._canvas).on('mousemove', evt => {
+      let clientRect = this._canvas.getBoundingClientRect();
+      this.playerPos.x = evt.clientX - clientRect.left;
+      this.playerPos.y = evt.clientY - clientRect.top;
+      //console.log(this.playerPos, this._canvas.width, this._canvas.height);
+    });
   }
 
-
-
   update(delta) {
-
+    this._currentScreen.update();
   }
 
   draw() {
