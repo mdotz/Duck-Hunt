@@ -1,13 +1,29 @@
-
-
 const container = $('#container');
-const canvas = document.getElementById('canvas');
-//const context = canvas.getContext('2d');
-
 let width;
 let height;
-
+const canvas = document.getElementById('canvas');
 updateViewportSize();
+
+$(window).resize(function() {
+  updateViewportSize();
+});
+
+function updateViewportSize() {
+  width = $(window).width();
+  height = $(window).height();
+
+  container.css('background-image', "url(background.png)")
+  if (width >= 854 && height >= 480) {
+    container.css('background-size', `${width}px ${height}px`);
+  } else {
+    container.css('background-size', `548px 480px`);
+  }
+
+  canvas.height = height / 1.61;
+  canvas.width = canvas.height * 8 / 7;
+}
+
+//////////////////////////////////////////////////////////
 
 class Rect {
   constructor(x, y, width, height) {
@@ -18,9 +34,8 @@ class Rect {
   }
 
   contains(x, y) {
-    //console.log(x, y);
     return x >= this.x && x <= this.x + this.width &&
-           y >= this.y && y <= this.y + this.height;
+      y >= this.y && y <= this.y + this.height;
   }
 }
 
@@ -56,21 +71,19 @@ class MenuScreen extends Screen {
     this.mode1Flag = false;
     this.mode2Flag = false;
     this.inputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.555555,
-                              this._canvas.width / 2, this._canvas.height / 28);
+      this._canvas.width / 2, this._canvas.height / 28);
     this.lowerInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.4,
-                              this._canvas.width / 2, this._canvas.height / 28);
+      this._canvas.width / 2, this._canvas.height / 28);
     this._music.play();
   }
   update() {
-    if(this.inputRect.contains(game.playerPos.x, game.playerPos.y)){
+    if (this.inputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.mode1Flag = true;
       this.mode2Flag = false;
-    }
-    else if(this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
+    } else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.mode1Flag = false;
       this.mode2Flag = true;
-    }
-    else {
+    } else {
       this.mode1Flag = false;
       this.mode2Flag = false;
     }
@@ -78,13 +91,18 @@ class MenuScreen extends Screen {
 
   draw() {
     this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
-    if(this.mode1Flag) {
-        this._context.drawImage(this._cursor, this.inputRect.x - this.inputRect.height * 2, this.inputRect.y,
-                                this.inputRect.height, this.inputRect.height);
-    }
-    else if (this.mode2Flag) {
-      this._context.drawImage(this._cursor, this.lowerInputRect.x - this.lowerInputRect.height * 2, this.lowerInputRect.y,
-                              this.lowerInputRect.height, this.lowerInputRect.height);
+    if (this.mode1Flag) {
+      this._context.drawImage(this._cursor,
+        this.inputRect.x - this.inputRect.height * 2,
+        this.inputRect.y,
+        this.inputRect.height,
+        this.inputRect.height);
+    } else if (this.mode2Flag) {
+      this._context.drawImage(this._cursor,
+        this.lowerInputRect.x - this.lowerInputRect.height * 2,
+        this.lowerInputRect.y,
+        this.lowerInputRect.height,
+        this.lowerInputRect.height);
     }
   }
 
@@ -116,7 +134,6 @@ class Game {
       let clientRect = this._canvas.getBoundingClientRect();
       this.playerPos.x = evt.clientX - clientRect.left;
       this.playerPos.y = evt.clientY - clientRect.top;
-      //console.log(this.playerPos, this._canvas.width, this._canvas.height);
     });
   }
 
@@ -149,57 +166,5 @@ class Game {
   }
 }
 
-const game = new Game(canvas);
+const game = new Game(document.getElementById('canvas'));
 game.start();
-
-$(window).resize(function() {
-  updateViewportSize();
-});
-
-/*
-function update(delta) {
-
-}
-
-function draw() {
-
-}
-
-function mainLoop(timestamp) {
-  // Throttle the frame rate.
-  if (timestamp < lastFrameTimeMs + (1000 / maxFps)) {
-    requestAnimationFrame(mainLoop);
-    return;
-  }
-  delta += timestamp - lastFrameTimeMs;
-  lastFrameTimeMs = timestamp;
-
-  while (delta >= timestep) {
-    update(timestep);
-    delta -= timestep;
-  }
-  draw();
-  requestAnimationFrame(mainLoop);
-}
-
-requestAnimationFrame(mainLoop);
-*/
-//
-
-function updateViewportSize() {
-  width = $(window).width();
-  height = $(window).height();
-
-  container.css('background-image', "url(background.png)")
-  if (width >= 854 && height >= 480) {
-    container.css('background-size', `${width}px ${height}px`);
-  } else {
-    container.css('background-size', `548px 480px`);
-  }
-
-  canvas.height = height / 1.61;
-  canvas.width = canvas.height * 8 / 7;
-
-  //console.log(`${canvas.width} ${canvas.height}`);
-  //context.fillRect(0, 0, canvas.width, canvas.height);
-}
