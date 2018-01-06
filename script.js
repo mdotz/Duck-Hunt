@@ -45,7 +45,7 @@ class Screen {
     this._context = canvas.getContext('2d');
   }
 
-  update() {
+  update(clicked) {
 
   }
 
@@ -76,16 +76,27 @@ class MenuScreen extends Screen {
       this._canvas.width / 2, this._canvas.height / 28);
     this._music.play();
   }
-  update() {
+  update(clicked) {
     if (this.inputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.mode1Flag = true;
       this.mode2Flag = false;
+      if(clicked){
+        console.log(this.mode1Flag, this.mode2Flag);
+        this._music.pause();
+        game.currentScreen = new MenuScreen(this._canvas);
+      }
     } else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.mode1Flag = false;
       this.mode2Flag = true;
+      if(clicked){
+        console.log(this.mode1Flag, this.mode2Flag);
+      }
     } else {
       this.mode1Flag = false;
       this.mode2Flag = false;
+      if(clicked){
+        console.log(this.mode1Flag, this.mode2Flag);
+      }
     }
   }
 
@@ -115,34 +126,31 @@ class Game {
   constructor(canvas) {
     this._canvas = canvas;
     this._context = canvas.getContext('2d');
-    this._currentScreen = new MenuScreen(this._canvas);
+    this.currentScreen = new MenuScreen(this._canvas);
 
     this.lastFrameTimeMs = 0;
     this.delta = 0;
     this.maxFps = 60;
     this.timestep = 1000 / 60;
 
+    this.clicked = false;
     this.playerPos = {
       x: 0,
       y: 0
     };
 
     this.gameLoop = this.gameLoop.bind(this);
-
-
-    $(this._canvas).on('mousemove', evt => {
-      let clientRect = this._canvas.getBoundingClientRect();
-      this.playerPos.x = evt.clientX - clientRect.left;
-      this.playerPos.y = evt.clientY - clientRect.top;
-    });
   }
 
   update(delta) {
-    this._currentScreen.update();
+    this.currentScreen.update(this.clicked);
+    if(this.clicked) {
+      this.clicked = false;
+    }
   }
 
   draw() {
-    this._currentScreen.draw();
+    this.currentScreen.draw();
   }
 
   gameLoop(timestamp) {
@@ -168,3 +176,13 @@ class Game {
 
 const game = new Game(document.getElementById('canvas'));
 game.start();
+
+$(canvas).on('mousemove', evt => {
+  let clientRect = canvas.getBoundingClientRect();
+  game.playerPos.x = evt.clientX - clientRect.left;
+  game.playerPos.y = evt.clientY - clientRect.top;
+});
+
+$(canvas).on('click', evt => {
+  game.clicked = true;
+});
