@@ -12,7 +12,7 @@ function updateViewportSize() {
   width = $(window).width();
   height = $(window).height();
 
-  container.css('background-image', "url(background.png)")
+  container.css('background-image', "url(src/assets/images/background.png)")
   if (width >= 854 && height >= 480) {
     container.css('background-size', `${width}px ${height}px`);
   } else {
@@ -62,11 +62,11 @@ class MenuScreen extends Screen {
   constructor(canvas) {
     super(canvas);
     this._background = document.createElement('img');
-    this._background.src = 'menu.jpg';
+    this._background.src = 'src/assets/images/menu.jpg';
     this._cursor = document.createElement('img');
-    this._cursor.src = 'cursor.jpg';
+    this._cursor.src = 'src/assets/images/cursor.jpg';
     this._music = document.createElement('audio');
-    this._music.src = 'menu.mp3';
+    this._music.src = 'src/assets/sfx/menu.mp3';
 
     this.mode1Flag = false;
     this.mode2Flag = false;
