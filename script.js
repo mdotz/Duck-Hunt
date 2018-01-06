@@ -68,52 +68,40 @@ class MenuScreen extends Screen {
     this._music = document.createElement('audio');
     this._music.src = 'src/assets/sfx/menu.mp3';
 
-    this.mode1Flag = false;
-    this.mode2Flag = false;
-    this.inputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.555555,
+    this.over = false;
+
+    this.inputRect;
+    this.modeFlag = true;
+    this.upperInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.555555,
       this._canvas.width / 2, this._canvas.height / 28);
     this.lowerInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.4,
       this._canvas.width / 2, this._canvas.height / 28);
     this._music.play();
   }
   update(clicked) {
-    if (this.inputRect.contains(game.playerPos.x, game.playerPos.y)) {
-      this.mode1Flag = true;
-      this.mode2Flag = false;
-      if(clicked){
-        console.log(this.mode1Flag, this.mode2Flag);
-        this._music.pause();
-        game.currentScreen = new MenuScreen(this._canvas);
-      }
-    } else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
-      this.mode1Flag = false;
-      this.mode2Flag = true;
-      if(clicked){
-        console.log(this.mode1Flag, this.mode2Flag);
-      }
-    } else {
-      this.mode1Flag = false;
-      this.mode2Flag = false;
-      if(clicked){
-        console.log(this.mode1Flag, this.mode2Flag);
-      }
+    if (this.upperInputRect.contains(game.playerPos.x, game.playerPos.y)) {
+      this.inputRect = this.upperInputRect;
+      this.modeFlag = true;
+    }
+    else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
+      this.inputRect = this.lowerInputRect;
+      this.modeFlag = false;
+    }
+
+    if(clicked && this.inputRect != null) {
+      this.over = true;
+      this._music.pause();
     }
   }
 
   draw() {
     this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
-    if (this.mode1Flag) {
+    if(this.inputRect != null){
       this._context.drawImage(this._cursor,
         this.inputRect.x - this.inputRect.height * 2,
         this.inputRect.y,
         this.inputRect.height,
         this.inputRect.height);
-    } else if (this.mode2Flag) {
-      this._context.drawImage(this._cursor,
-        this.lowerInputRect.x - this.lowerInputRect.height * 2,
-        this.lowerInputRect.y,
-        this.lowerInputRect.height,
-        this.lowerInputRect.height);
     }
   }
 
@@ -146,6 +134,9 @@ class Game {
     this.currentScreen.update(this.clicked);
     if(this.clicked) {
       this.clicked = false;
+    }
+    if(this.currentScreen.over){
+      this.currentScreen = new MenuScreen(this._canvas);
     }
   }
 
