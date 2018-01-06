@@ -39,6 +39,92 @@ class Rect {
   }
 }
 
+class Dog {
+  constructor(canvas) {
+    this._canvas = canvas;
+    this._context = canvas.getContext('2d');
+
+    this.spritesheet = document.createElement('img');
+    this.spritesheet.src = 'src/assets/images/dog-spritesheet.png';
+
+    this.animation = new Animation();
+    this.animation.addFrame(
+      new SpriteRegion(this.spritesheet, 0, 0, 55, 43)
+    );
+    this.animation.addFrame(
+      new SpriteRegion(this.spritesheet, 55, 0, 55, 43)
+    );
+    this.animation.addFrame(
+      new SpriteRegion(this.spritesheet, 110, 0, 55, 43)
+    );
+    this.animation.addFrame(
+      new SpriteRegion(this.spritesheet, 165, 0, 55, 43)
+    );
+  }
+
+  draw() {
+    let currentFrame = this.animation.getframeAt(2);
+    this._context.drawImage(currentFrame.image, currentFrame.x, currentFrame.y,
+      currentFrame.width, currentFrame.height,
+      50,50,30,30);
+  }
+}
+
+class SpriteRegion {
+  constructor(image, x, y, width, height) {
+      this._image = image;
+      this._x = x;
+      this._y = y;
+      this._width = width;
+      this._height = height;
+  }
+
+  get x() {
+    return this._x;
+  }
+
+  get y() {
+    return this._y;
+  }
+
+  get width() {
+    return this._width;
+  }
+
+  get height() {
+    return this._height;
+  }
+
+  get image() {
+    return this._image;
+  }
+}
+
+class Animation {
+  constructor() {
+    this._frames = [];
+    this._playTime = 0;
+  }
+
+  addFrame(frame) {
+    this._frames.push(frame);
+  }
+
+  getframeAt(index) {
+    if(index < this._frames.length) {
+      return this._frames[index];
+    }
+  }
+
+  set playTime(playTime) {
+    this.playTime = playTime;
+  }
+
+  get playTime() {
+    return this.playTime;
+  }
+}
+
 class Screen {
   constructor(canvas) {
     this._canvas = canvas;
@@ -50,7 +136,7 @@ class Screen {
   }
 
   draw() {
-
+    this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
   }
 
   resize() {
@@ -69,13 +155,13 @@ class MenuScreen extends Screen {
     this._music.src = 'src/assets/sfx/menu.mp3';
 
     this.over = false;
-
     this.inputRect;
     this.modeFlag = true;
     this.upperInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.555555,
       this._canvas.width / 2, this._canvas.height / 28);
     this.lowerInputRect = new Rect(this._canvas.width / 4.0, this._canvas.height / 1.4,
       this._canvas.width / 2, this._canvas.height / 28);
+
     this._music.play();
   }
   update(clicked) {
@@ -95,7 +181,7 @@ class MenuScreen extends Screen {
   }
 
   draw() {
-    this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
+    super.draw();
     if(this.inputRect != null){
       this._context.drawImage(this._cursor,
         this.inputRect.x - this.inputRect.height * 2,
@@ -103,6 +189,32 @@ class MenuScreen extends Screen {
         this.inputRect.height,
         this.inputRect.height);
     }
+  }
+
+  resize() {
+
+  }
+}
+
+class PlayScreen extends Screen {
+  constructor(canvas) {
+    super(canvas);
+    this._background = document.createElement('img');
+    this._background.src = 'src/assets/images/play_background.jpg';
+    this._music = document.createElement('audio');
+    this._music.src = 'src/assets/sfx/play_intro.mp3';
+    this.dog = new Dog(this._canvas);
+
+    this._music.play();
+  }
+
+  update(clicked) {
+
+  }
+
+  draw() {
+    super.draw();
+    this.dog.draw();
   }
 
   resize() {
@@ -136,7 +248,7 @@ class Game {
       this.clicked = false;
     }
     if(this.currentScreen.over){
-      this.currentScreen = new MenuScreen(this._canvas);
+      this.currentScreen = new PlayScreen(this._canvas);
     }
   }
 
