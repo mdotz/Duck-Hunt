@@ -47,39 +47,122 @@ class Dog {
     this.spritesheet = document.createElement('img');
     this.spritesheet.src = 'src/assets/images/dog-spritesheet.png';
 
-    this.walk = new Animation(500, true);
-    this.jump = new Animation(6000);
+    this.bark = document.createElement('audio');
+    this.bark.src = 'src/assets/sfx/bark.mp3'
+
+    this.x = 0;
+    this.y = this._canvas.height / 80 * 47;
+    this.width = this._canvas.width * 7 / 33;
+    this.height = this._canvas.height * 12 / 61;
+    //this.velX = 0.5;
+    this.velX = this._canvas.width / 1000 * 1.1;
+    //this.velY = - this._canvas.height / 1000 * 1.5;
+    this.velY = 0;
+
+    this.walk = new Animation(500, false);
+    this.sniff = new Animation(333, false);
+    this.jump = new Animation(3500, false);
+    this.look = new Animation(1000, false);
 
     for (let i = 0; i < 4; i++) {
       this.walk.addFrame(
         new SpriteRegion(this.spritesheet, i * 55, 0, 55, 43));
     }
 
+    this.sniff.addFrame(
+      new SpriteRegion(this.spritesheet, 0, 0, 55, 43));
+    this.sniff.addFrame(
+      new SpriteRegion(this.spritesheet, 55*4+2, 0, 55, 43));
+
     for (let i = 0; i < 2; i++) {
       this.jump.addFrame(
-        new SpriteRegion(this.spritesheet, 53 + 35, 43, 35, 46));
+        new SpriteRegion(this.spritesheet, 53 + 35 * i, 43, 35, 46));
     }
+
+    this.look.addFrame(
+        new SpriteRegion(this.spritesheet, 0, 43, 53, 48));
 
     this.currentFrame = this.walk.getframeAt(0);
 
     this.state = 'start';
     this.stateTimer = 0;
+    this.cycles = ['walk', 'walk', 'walk', 'walk', 'sniff', 'sniff', 'sniff',
+                   'walk', 'walk', 'walk', 'walk', 'sniff', 'sniff', 'sniff',
+                   'look', 'jump' ,'hidden'];
+    this.stateIndex = 0;
+    this.currentState = this.cycles[this.stateIndex];
+    this.currentAnimation = this.walk;
   }
 
   update(delta, clicked) {
     this.stateTimer += delta;
-    if(this.state === 'start') {
-      this.currentFrame = this.walk.getFrame(this.stateTimer);
+    /*if(this.state === 'start') {
+      this.currentFrame = this.startAnimation.getFrame(this.stateTimer);
+    }*/
+
+    if(this.currentAnimation.isOver) {
+      this.stateIndex++;
+      this.currentState = this.cycles[this.stateIndex];
+      this.currentAnimation.reset();
+      this.stateTimer = 0;
+      if(this.currentState === 'sniff' || this.currentState === 'look') {
+        this.velX = 0;
+        this.velY = 0;
+        this.width = this._canvas.width * 7 / 33;
+      }
+      else if(this.currentState === 'walk') {
+        this.velX = this.velX = this._canvas.width / 1000 * 1.1;
+        this.width = this._canvas.width * 7 / 33;
+      }
+      else if(this.currentState === 'jump') {
+        this.velX = this._canvas.width / 1000 * 1.1;
+        this.velY = - this._canvas.height / 1000 * 1.5;
+        this.width = this._canvas.width * 7 / 33 * 35 / 55;
+      }
     }
 
+    switch(this.currentState) {
+      case 'walk':
+        //this.x += this.velX;
+        this.currentAnimation = this.walk;
+        this.currentFrame = this.walk.getFrame(this.stateTimer);
+        break;
+      case 'sniff':
+        this.currentAnimation = this.sniff;
+        this.currentFrame = this.sniff.getFrame(this.stateTimer);
+        break;
+      case 'look':
+        this.bark.play();
+        this.currentAnimation = this.look;
+        this.currentFrame = this.look.getFrame(this.stateTimer);
+        break;
+      case 'jump':
+        //this.x += this.velX;
+        //this.y += this.velY;
+        if(this.y <= this._canvas.height * 59 / 145) {
+          this.velY = - this.velY;
+        }
+        //this.width = this._canvas.width * 7 / 33 * 35 / 55;
+        this.currentAnimation = this.jump;
+        this.currentFrame = this.jump.getFrame(this.stateTimer);
+    }
+
+    this.x += this.velX;
+    this.y += this.velY;
   }
 
   draw() {
     //let currentFrame = this.walk.getframeAt(3);
-    this._context.drawImage(this.currentFrame.image,
-      this.currentFrame.x, this.currentFrame.y,
-      this.currentFrame.width, this.currentFrame.height,
-      0, this._canvas.height / 80 * 43, 100, 100);
+    if(this.currentState != 'hidden') {
+      /*this._context.drawImage(this.currentFrame.image,
+        this.currentFrame.x, this.currentFrame.y,
+        this.currentFrame.width, this.currentFrame.height,
+        0, this._canvas.height / 80 * 43, 100, 100);  */
+        this._context.drawImage(this.currentFrame.image,
+          this.currentFrame.x, this.currentFrame.y,
+          this.currentFrame.width, this.currentFrame.height,
+          this.x, this.y, this.width, this.height);
+    }
   }
 }
 
@@ -156,6 +239,12 @@ class Animation {
 
   _updateTimePerFrame() {
     this._timePerFrame = this._playTime / this._frames.length;
+  }
+
+  reset() {
+    this._currentFrameIndex = 0;
+    this._index = 0;
+    this._isOver = false;
   }
 
   get isOver() {
@@ -312,20 +401,6 @@ class Game {
     }
     this.draw();
     requestAnimationFrame(this.gameLoop);
-/*
-    let numUpdateSteps = 0;
-    this.delta += timestamp - this.lastFrameTimeMs;
-    this.lastFrameTimeMs = timestamp;
-    while (this.delta >= this.timestep) {
-      game.update(this.timestep);
-      this.delta -= this.timestep;
-      if (++numUpdateSteps >= 240) {
-        this.delta = 0;
-        break;
-      }
-    }
-    this.draw();
-    requestAnimationFrame(this.gameLoop);*/
 
   }
 
