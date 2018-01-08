@@ -47,10 +47,10 @@ class Dog {
     this.spritesheet = document.createElement('img');
     this.spritesheet.src = 'src/assets/images/dog-spritesheet.png';
 
-    this.walk = new Animation(500);
+    this.walk = new Animation(500, true);
     this.jump = new Animation(6000);
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       this.walk.addFrame(
         new SpriteRegion(this.spritesheet, i * 55, 0, 55, 43));
     }
@@ -71,6 +71,7 @@ class Dog {
     if(this.state === 'start') {
       this.currentFrame = this.walk.getFrame(this.stateTimer);
     }
+
   }
 
   draw() {
@@ -113,15 +114,19 @@ class SpriteRegion {
 }
 
 class Animation {
-  constructor(playTime) {
+  constructor(playTime, looping) {
     this._frames = [];
     this._playTime = playTime;
     this._currentFrameIndex = 0;
-    this._timer = 0;
+    this._looping = looping;
+    this._timePerFrame = 0;
+    this._index = 0;
+    this._isOver = false;
   }
 
   addFrame(frame) {
     this._frames.push(frame);
+    this._updateTimePerFrame();
   }
 
   getframeAt(index) {
@@ -131,36 +136,30 @@ class Animation {
   }
 
   getFrame(timer) {
-    let timePerFrame = this._playTime / this._frames.length;
-    //let index = Math.round(Math.floor(timer % this._playTime / 1000) / timePerFrame);
-    let currentFrameTime = timer % this._playTime;
-    let index = 0;
-    console.log(currentFrameTime);
-    console.log(timePerFrame);
+    let currentFrameTime = this._looping ? timer % this._playTime : timer;
+
     for(let i = 0; i < this._frames.length; i++) {
-      //console.log('in for');
-      if(currentFrameTime >= timePerFrame * i &&
-         currentFrameTime < timePerFrame * (i+1)) {
-        index = i;
-        //console.log('in if');
+      if(currentFrameTime >= this._timePerFrame * i &&
+         currentFrameTime < this._timePerFrame * (i+1)) {
+        this._index = i;
+        break;
+      }
+      else if(currentFrameTime > this._playTime) {
+        this._index = this._frames.length-1;
+        this._isOver = true;
         break;
       }
     }
 
-    //console.log(index);
-    if(index >= 0 && index < this._frames.length){
-      return this._frames[index];
-    }
-
-    else return this._frames[0];
+    return this._frames[this._index];
   }
 
-  set playTime(playTime) {
-    this.playTime = playTime;
+  _updateTimePerFrame() {
+    this._timePerFrame = this._playTime / this._frames.length;
   }
 
-  get playTime() {
-    return this.playTime;
+  get isOver() {
+    return this._isOver;
   }
 }
 
