@@ -47,36 +47,48 @@ class Dog {
     this.spritesheet = document.createElement('img');
     this.spritesheet.src = 'src/assets/images/dog-spritesheet.png';
 
-    this.animation = new Animation();
-    this.animation.addFrame(
-      new SpriteRegion(this.spritesheet, 0, 0, 55, 43)
-    );
-    this.animation.addFrame(
-      new SpriteRegion(this.spritesheet, 55, 0, 55, 43)
-    );
-    this.animation.addFrame(
-      new SpriteRegion(this.spritesheet, 110, 0, 55, 43)
-    );
-    this.animation.addFrame(
-      new SpriteRegion(this.spritesheet, 165, 0, 55, 43)
-    );
+    this.walk = new Animation(500);
+    this.jump = new Animation(6000);
+
+    for (let i = 0; i < 5; i++) {
+      this.walk.addFrame(
+        new SpriteRegion(this.spritesheet, i * 55, 0, 55, 43));
+    }
+
+    for (let i = 0; i < 2; i++) {
+      this.jump.addFrame(
+        new SpriteRegion(this.spritesheet, 53 + 35, 43, 35, 46));
+    }
+
+    this.currentFrame = this.walk.getframeAt(0);
+
+    this.state = 'start';
+    this.stateTimer = 0;
+  }
+
+  update(delta, clicked) {
+    this.stateTimer += delta;
+    if(this.state === 'start') {
+      this.currentFrame = this.walk.getFrame(this.stateTimer);
+    }
   }
 
   draw() {
-    let currentFrame = this.animation.getframeAt(2);
-    this._context.drawImage(currentFrame.image, currentFrame.x, currentFrame.y,
-      currentFrame.width, currentFrame.height,
-      50,50,30,30);
+    //let currentFrame = this.walk.getframeAt(3);
+    this._context.drawImage(this.currentFrame.image,
+      this.currentFrame.x, this.currentFrame.y,
+      this.currentFrame.width, this.currentFrame.height,
+      0, this._canvas.height / 80 * 43, 100, 100);
   }
 }
 
 class SpriteRegion {
   constructor(image, x, y, width, height) {
-      this._image = image;
-      this._x = x;
-      this._y = y;
-      this._width = width;
-      this._height = height;
+    this._image = image;
+    this._x = x;
+    this._y = y;
+    this._width = width;
+    this._height = height;
   }
 
   get x() {
@@ -101,9 +113,11 @@ class SpriteRegion {
 }
 
 class Animation {
-  constructor() {
+  constructor(playTime) {
     this._frames = [];
-    this._playTime = 0;
+    this._playTime = playTime;
+    this._currentFrameIndex = 0;
+    this._timer = 0;
   }
 
   addFrame(frame) {
@@ -111,9 +125,34 @@ class Animation {
   }
 
   getframeAt(index) {
-    if(index < this._frames.length) {
+    if (index < this._frames.length) {
       return this._frames[index];
     }
+  }
+
+  getFrame(timer) {
+    let timePerFrame = this._playTime / this._frames.length;
+    //let index = Math.round(Math.floor(timer % this._playTime / 1000) / timePerFrame);
+    let currentFrameTime = timer % this._playTime;
+    let index = 0;
+    console.log(currentFrameTime);
+    console.log(timePerFrame);
+    for(let i = 0; i < this._frames.length; i++) {
+      //console.log('in for');
+      if(currentFrameTime >= timePerFrame * i &&
+         currentFrameTime < timePerFrame * (i+1)) {
+        index = i;
+        //console.log('in if');
+        break;
+      }
+    }
+
+    //console.log(index);
+    if(index >= 0 && index < this._frames.length){
+      return this._frames[index];
+    }
+
+    else return this._frames[0];
   }
 
   set playTime(playTime) {
@@ -164,17 +203,16 @@ class MenuScreen extends Screen {
 
     this._music.play();
   }
-  update(clicked) {
+  update(delta, clicked) {
     if (this.upperInputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.inputRect = this.upperInputRect;
       this.modeFlag = true;
-    }
-    else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
+    } else if (this.lowerInputRect.contains(game.playerPos.x, game.playerPos.y)) {
       this.inputRect = this.lowerInputRect;
       this.modeFlag = false;
     }
 
-    if(clicked && this.inputRect != null) {
+    if (clicked && this.inputRect != null) {
       this.over = true;
       this._music.pause();
     }
@@ -182,7 +220,7 @@ class MenuScreen extends Screen {
 
   draw() {
     super.draw();
-    if(this.inputRect != null){
+    if (this.inputRect != null) {
       this._context.drawImage(this._cursor,
         this.inputRect.x - this.inputRect.height * 2,
         this.inputRect.y,
@@ -208,8 +246,8 @@ class PlayScreen extends Screen {
     this._music.play();
   }
 
-  update(clicked) {
-
+  update(delta, clicked) {
+    this.dog.update(delta, clicked);
   }
 
   draw() {
@@ -239,15 +277,20 @@ class Game {
       y: 0
     };
 
+    this.time = 0;
+
     this.gameLoop = this.gameLoop.bind(this);
   }
 
   update(delta) {
-    this.currentScreen.update(this.clicked);
-    if(this.clicked) {
+
+    this.time += delta;
+    //console.log(this.time);
+    this.currentScreen.update(delta, this.clicked);
+    if (this.clicked) {
       this.clicked = false;
     }
-    if(this.currentScreen.over){
+    if (this.currentScreen.over) {
       this.currentScreen = new PlayScreen(this._canvas);
     }
   }
@@ -270,6 +313,21 @@ class Game {
     }
     this.draw();
     requestAnimationFrame(this.gameLoop);
+/*
+    let numUpdateSteps = 0;
+    this.delta += timestamp - this.lastFrameTimeMs;
+    this.lastFrameTimeMs = timestamp;
+    while (this.delta >= this.timestep) {
+      game.update(this.timestep);
+      this.delta -= this.timestep;
+      if (++numUpdateSteps >= 240) {
+        this.delta = 0;
+        break;
+      }
+    }
+    this.draw();
+    requestAnimationFrame(this.gameLoop);*/
+
   }
 
   start() {
