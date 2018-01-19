@@ -46,6 +46,7 @@ class Dog {
 
     this.spritesheet = document.createElement('img');
     this.spritesheet.src = 'src/assets/images/dog-spritesheet.png';
+    this.spritesheet.style.imageRendering = 'crisp-edges';
 
     this.bark = document.createElement('audio');
     this.bark.src = 'src/assets/sfx/bark.mp3'
@@ -61,7 +62,7 @@ class Dog {
 
     this.walk = new Animation(500, false);
     this.sniff = new Animation(333, false);
-    this.jump = new Animation(3500, false);
+    this.jump = new Animation(750, false);
     this.look = new Animation(1000, false);
 
     for (let i = 0; i < 4; i++) {
@@ -92,6 +93,8 @@ class Dog {
     this.stateIndex = 0;
     this.currentState = this.cycles[this.stateIndex];
     this.currentAnimation = this.walk;
+
+    this.behind = false;
   }
 
   update(delta, clicked) {
@@ -115,38 +118,37 @@ class Dog {
         this.width = this._canvas.width * 7 / 33;
       }
       else if(this.currentState === 'jump') {
-        this.velX = this._canvas.width / 1000 * 1.1;
-        this.velY = - this._canvas.height / 1000 * 1.5;
+        this.velX = this._canvas.width / 1000 * 6;
+        this.velY = - this._canvas.height / 1000 * 6;
         this.width = this._canvas.width * 7 / 33 * 35 / 55;
+      }
+      else if(this.currentState === 'hidden') {
+        this.velX = 0;
+        this.velY = 0;
+        this.width = 0;
       }
     }
 
     switch(this.currentState) {
       case 'walk':
-        //this.x += this.velX;
         this.currentAnimation = this.walk;
-        this.currentFrame = this.walk.getFrame(this.stateTimer);
         break;
       case 'sniff':
         this.currentAnimation = this.sniff;
-        this.currentFrame = this.sniff.getFrame(this.stateTimer);
         break;
       case 'look':
         this.bark.play();
         this.currentAnimation = this.look;
-        this.currentFrame = this.look.getFrame(this.stateTimer);
         break;
       case 'jump':
-        //this.x += this.velX;
-        //this.y += this.velY;
-        if(this.y <= this._canvas.height * 59 / 145) {
+        if(this.y <= this._canvas.height * 62 / 145) {
           this.velY = - this.velY;
+          this.behind = true;
         }
-        //this.width = this._canvas.width * 7 / 33 * 35 / 55;
         this.currentAnimation = this.jump;
-        this.currentFrame = this.jump.getFrame(this.stateTimer);
     }
 
+    this.currentFrame = this.currentAnimation.getFrame(this.stateTimer);
     this.x += this.velX;
     this.y += this.velY;
   }
@@ -263,7 +265,7 @@ class Screen {
   }
 
   draw() {
-    this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
+
   }
 
   resize() {
@@ -307,7 +309,7 @@ class MenuScreen extends Screen {
   }
 
   draw() {
-    super.draw();
+    this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
     if (this.inputRect != null) {
       this._context.drawImage(this._cursor,
         this.inputRect.x - this.inputRect.height * 2,
@@ -325,11 +327,19 @@ class MenuScreen extends Screen {
 class PlayScreen extends Screen {
   constructor(canvas) {
     super(canvas);
+
+    $(canvas).css('cursor', 'none');
+
+    this._context.fillStyle = '#63ADFF';
     this._background = document.createElement('img');
-    this._background.src = 'src/assets/images/play_background.jpg';
+    this._background.src = 'src/assets/images/play_background.png';
+    this._dative = document.createElement('img');
+    this._dative.src = 'src/assets/images/dative.png';
     this._music = document.createElement('audio');
     this._music.src = 'src/assets/sfx/play_intro.mp3';
     this.dog = new Dog(this._canvas);
+
+    this.inBack = true;
 
     this._music.play();
   }
@@ -339,8 +349,24 @@ class PlayScreen extends Screen {
   }
 
   draw() {
-    super.draw();
+    this._context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    if(!this.dog.behind) {
+      this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
+    }
+
     this.dog.draw();
+
+    if(this.dog.behind) {
+        this._context.drawImage(this._background, 0, 0, this._canvas.width, this._canvas.height);
+    }
+
+    if(game.playerPos.y < this._canvas.height / 5 * 4) {
+      this._context.drawImage(this._dative,
+        game.playerPos.x - this._canvas.height / 40,
+        game.playerPos.y - this._canvas.height / 40,
+        this._canvas.height / 20, this._canvas.height / 20);
+    }
   }
 
   resize() {
@@ -352,6 +378,7 @@ class Game {
   constructor(canvas) {
     this._canvas = canvas;
     this._context = canvas.getContext('2d');
+
     this.currentScreen = new MenuScreen(this._canvas);
 
     this.lastFrameTimeMs = 0;

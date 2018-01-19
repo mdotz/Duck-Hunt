@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+img {
+  image-rendering: crisp-edges;
+}
+
 body, html {
   height: 100%;
   width: 100%;
@@ -23,4 +27,5 @@ canvas {
   bottom: 0;
   left: 0;
   right: 0;
+  image-rendering: crisp-edges;
 }
